@@ -8,7 +8,7 @@ mkdir -p cmake linker startup \
          include/{ll,drivers,hal,util} \
          drivers hal src scripts docs
 
-# minimal placeholders 
+### minimal placeholders 
 touch CMakeLists.txt              
 touch Makefile                    
 touch cmake/toolchain-msp430-gcc.cmake
