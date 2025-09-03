@@ -4,11 +4,13 @@ A layered embedded software stack: starting with raw register descriptions, buil
 ## DAY#1 (03/09/2025)
 Following commands were executed and the project folder structure was made.
 ### directories
+```
 mkdir -p cmake linker startup \
          include/{ll,drivers,hal,util} \
          drivers hal src scripts docs
-
+```
 ### minimal placeholders 
+```
 touch CMakeLists.txt              
 touch Makefile                    
 touch cmake/toolchain-msp430-gcc.cmake
@@ -24,3 +26,4 @@ touch hal/board_init.c
 touch src/main.c
 touch scripts/flash.sh
 touch docs/Doxyfile
+```
