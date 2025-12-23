@@ -65,77 +65,68 @@ TI-MSP430-HAL/
 ```
 ## Day2
 ### 27/09/2025
-1. Install GCC Toolchain for the TI-MSP430G2553
+1. Download GCC Toolchain for the TI-MSP430G2553
     1. Download the following tool chain from TI. 
-        1. https://dr-download.ti.com/software-development/ide-configuration-compiler-or-debugger/MD-LlCjWuAbzH/9.3.1.2/msp430-gcc-support-files-1.212.zip
-        2. https://dr-download.ti.com/software-development/ide-configuration-compiler-or-debugger/MD-LlCjWuAbzH/9.3.1.2/msp430-gcc-9.3.1.11-source-full.tar.bz2
+        1. https://dr-download.ti.com/software-development/ide-configuration-compiler-or-debugger/MD-LlCjWuAbzH/9.3.1.2/msp430-gcc-9.3.1.11_linux64.tar.bz2 --> Mitto Systems GCC 64-bit Linux - toolchain only
+        2. https://dr-download.ti.com/software-development/ide-configuration-compiler-or-debugger/MD-LlCjWuAbzH/9.3.1.2/msp430-gcc-support-files-1.212.zip --> Header and Support Files
         or Download the toolchain which is fit for the project's need but only from TI. 
-    2. Unzip and move to the project_base/toolchain/MSP430 folder
+    2. Unzip and move to the 
+    ```
+    <BASE-PROJECT-PATH>/TI-MSP430-HAL/toolchain/MSP430 folder
+    ```
 
 ## Day3
 ### 17/10/2025
  1. Making the toolchain work
- 1. Making environemnt variables (Temporary for the current shell)
-# from repo root
-    export TOOLCHAIN_DIR="$PWD/toolchain/MSP430/GCC_source_files/msp430-gcc-9.3.1.11_linux64"
-    export SUPPORT_DIR="$PWD/toolchain/MSP430/GCC_source_files/msp430-gcc-support-files-1.212/msp430-gcc-support-files"
-    export PATH="$TOOLCHAIN_DIR/bin:$PATH"
+    - Manual Compilation
+        1. check version by the following command 
+        ```
+        <BASE-PROJECT-PATH>/TI-MSP430-HAL/toolchain/MS/GCC_source_files/msp430-gcc-9.3.1.11_linux64/bin/msp430-elf-gcc --version ---> msp430-elf-gcc (Mitto Systems Limited - msp430-gcc 9.3.1.11)
 
-    # quick checks
-    which msp430-elf-gcc
-    test -f "$SUPPORT_DIR/include/msp430.h" && echo "support headers ok" || echo "support headers NOT found"
+        ```
+        2. Make the compiler available in the shell
+        ```
+        export PATH="$(<BASE-PROJECT-PATH>)/toolchain/MS/GCC_source_files/msp430-gcc-9.3.1.11_linux64/bin:$PATH"
+        ```
+        3. Verify 
+        ```
+        msp430-elf-gcc --version --> 
+        
+        msp430-elf-gcc (Mitto Systems Limited - msp430-gcc 9.3.1.11) 9.3.1
+        Copyright (C) 2019 Free Software Foundation, Inc.
+        This is free software; see the source for copying conditions.  There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        ```
+        4. Attempting a failed compilation 
+            1. Go to the folder app/Src/blink.c
+        ```
+        msp430-elf-gcc -mmcu=msp430g2553 blink.c -o blinky.elf -->
 
-    It should give the results as follows
-    COMMAND: USER:~/ti/TI-MSP430-HAL$ export TOOLCHAIN_DIR="$PWD/toolchain/MSP430/GCC_source_files/msp430-gcc-9.3.1.11_linux64"
+        ```
+        Returns 
+        ``` 
+        blink.c:1:10: fatal error: msp430.h: No such file or directory
+        1 | #include <msp430.h>
+          |          ^~~~~~~~~~
+        compilation terminated.
+        ```
+        5. Locate required header
+            1. Find the msp430.h header file in the tool chain. Move to the 
+            ```
+            find <BASE-PROJECT-PATH>/TI-MSP430-HAL/toolchain/MSP430/GCC_source_files -name msp430.h
+            ```
+            Returns a bunch of places but needed header file is in 
+            ```
+            <BASE-PROJECT-PATH>/TI-MSP430-HAL/toolchain/MSP430/GCC_source_files/msp430-gcc-support-files-1.212/msp430-gcc-support-files/include/msp430.h
+            ```
 
-    COMMAND: USER:~/ti/TI-MSP430-HAL$ export SUPPORT_DIR="$PWD/toolchain/MSP430/GCC_source_files/msp430-gcc-support-files-1.212/msp430-gcc-support-files"
+        6. Compile the code
+        Use the following code to compile the main.c (its blink.c in this case)
+        ```
+        msp430-elf-gcc \
+        -mmcu=msp430g2553 \
+        -I/<BASE-PROJECT-PATH>/TI-MSP430-HAL/toolchain/MSP430/GCC_source_files/msp430-gcc-support-files-1.212/msp430-gcc-support-files/include \
+        -L/<BASE-PROJECT-PATH>/TI-MSP430-HAL/toolchain/MSP430/GCC_source_files/msp430-gcc-support-files-1.212/msp430-gcc-support-files/include \
+        /<BASE-PROJECT-PATH>/TI-MSP430-HAL/app/Src/blink.c \
+        -o  /<BASE-PROJECT-PATH>/TI-MSP430-HAL/app/Src/blink.elf
 
-    COMMAND: USER:~/ti/TI-MSP430-HAL$ export PATH="$TOOLCHAIN_DIR/bin:$PATH"
-
-    COMMAND: USER:~/ti/TI-MSP430-HAL$ which msp430-elf-gcc
-
-    REPLY: USER-PATH/TI-MSP430-HAL/toolchain/MSP430/GCC_source_files/msp430-gcc-9.3.1.11_linux64/bin/msp430-elf-gcc
-
-    COMMAND: USER:~/ti/TI-MSP430-HAL$ test -f "$SUPPORT_DIR/include/msp430.h" && echo "support headers ok" || echo "support headers NOT found"
-
-    REPLY: support headers ok
-
-2. Create a small CMake tool chain file - USING ALWAYS MSP430 GCC
- 1. Create a file on the path -> toolchain/cmake/msp430_toolchain.cmake
- 2. Paste the content in the file as below
-    ```
-    # toolchain/cmake/msp430_toolchain.cmake
-    # Use this file with:
-    #   cmake -DCMAKE_TOOLCHAIN_FILE=toolchain/cmake/msp430_toolchain.cmake -B build
-
-    # Tell CMake we are cross-compiling for an embedded target
-    set(CMAKE_SYSTEM_NAME Generic)
-    set(CMAKE_SYSTEM_PROCESSOR msp430)
-
-    # Path to the TI MSP430 GCC toolchain
-    set(TOOLCHAIN_DIR "${CMAKE_SOURCE_DIR}/toolchain/MSP430/GCC_source_files/msp430-gcc-9.3.1.11_linux64" CACHE PATH "Path to MSP430 GCC toolchain")
-
-    # Compiler and tools
-    set(CMAKE_C_COMPILER "${TOOLCHAIN_DIR}/bin/msp430-elf-gcc")
-    set(CMAKE_ASM_COMPILER "${TOOLCHAIN_DIR}/bin/msp430-elf-gcc")
-    set(CMAKE_AR "${TOOLCHAIN_DIR}/bin/msp430-elf-ar")
-    set(CMAKE_OBJCOPY "${TOOLCHAIN_DIR}/bin/msp430-elf-objcopy")
-    set(CMAKE_OBJDUMP "${TOOLCHAIN_DIR}/bin/msp430-elf-objdump")
-    set(CMAKE_RANLIB "${TOOLCHAIN_DIR}/bin/msp430-elf-ranlib")
-
-    # MSP430 support headers (from the TI support package)
-    set(MSP430_SUPPORT_DIR "${CMAKE_SOURCE_DIR}/toolchain/MSP430/GCC_source_files/msp430-gcc-support-files-1.212/msp430-gcc-support-files" CACHE PATH "Path to MSP430 support files")
-
-    # Add the include paths for device headers
-    include_directories(SYSTEM
-        "${MSP430_SUPPORT_DIR}/include"
-        "${TOOLCHAIN_DIR}/msp430-elf/include"
-        "${TOOLCHAIN_DIR}/lib/gcc/msp430-elf/9.3.1/include"
-    )
-
-    # Add the toolchain bin folder to PATH (for subprocesses)
-    set(ENV{PATH} "${TOOLCHAIN_DIR}/bin:$ENV{PATH}")
-
-    # Optional: suppress system checks that don't apply to embedded targets
-    set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
-    ```
+        ```
