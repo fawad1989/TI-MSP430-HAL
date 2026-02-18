@@ -228,7 +228,7 @@ Created folder structure
     MCU          := msp430g2553
 
     # Project paths
-    PROJECT_ROOT := /mnt/8A0C7A920C7A7951/Project/ti/TI-MSP430-HAL
+    PROJECT_ROOT := PROJECT_ROOT := $(dir $(THIS_MAKEFILE))
     SRC_DIR      := $(PROJECT_ROOT)/app/Src
     TOOLCHAIN    := $(PROJECT_ROOT)/toolchain
 
